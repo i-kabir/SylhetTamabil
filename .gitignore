@@ -1,0 +1,14 @@
+# Office / Spreadsheet files
+*.xlsx
+*.xls
+~$*
+
+# Temporary files
+D71F*
+*.tmp
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
