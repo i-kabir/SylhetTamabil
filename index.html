@@ -6,6 +6,13 @@
 <meta name="color-scheme" content="light dark">
 <title>Sylhet Tamabil Road Improvement Project</title>
 
+<!-- Resource Hints for CDNs -->
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://mt0.google.com">
+<link rel="dns-prefetch" href="https://mt1.google.com">
+<link rel="dns-prefetch" href="https://docs.google.com">
+
 <!-- Leaflet & MarkerCluster CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="anonymous">
@@ -335,12 +342,17 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 
 /* Icon Buttons */
 .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 26px;
   height: 26px;
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   border: 1px solid transparent;
   flex-shrink: 0;
+  text-decoration: none;
+  cursor: pointer;
 }
 .btn-icon:hover {
   background: var(--bg);
@@ -472,6 +484,7 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   display: flex;
   justify-content: center;
   position: relative;
+  touch-action: none;
 }
 .splitter::before {
   content: "";
@@ -554,8 +567,19 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   font-weight: 600;
   box-shadow: var(--shadow-sm);
   margin-top: 3px;
+  transition: opacity 0.15s ease;
 }
 .marker-label::before { display: none; }
+#map:not(.map-zoomed-in) .marker-label:not(.selected-label) {
+  display: none !important;
+}
+.marker-label.selected-label {
+  display: block !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  z-index: 1000 !important;
+  box-shadow: 0 0 0 2px var(--ring) !important;
+}
 
 /* Floating Map Controls & Switcher */
 .map-controls-group {
@@ -710,7 +734,6 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   color: #ffffff;
   flex-shrink: 0;
   line-height: 18px;
-}
 }
 
 .doc-toolbar {
@@ -1084,6 +1107,79 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 }
 .toast.show { opacity: 1; transform: translateY(0); }
 
+/* Responsive Layout (< 768px) */
+@media (max-width: 768px) {
+  .header {
+    height: auto;
+    min-height: 42px;
+    padding: 6px 8px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .header-left { order: 1; }
+  .header-right { order: 2; }
+  .header-center {
+    order: 3;
+    width: 100%;
+    flex: 1 0 100%;
+    margin-top: 2px;
+  }
+  .search-container {
+    flex: 1;
+    width: auto;
+    min-width: 130px;
+  }
+  .workspace {
+    flex-direction: column;
+  }
+  .map-panel {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 50% !important;
+  }
+  .doc-panel {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 50% !important;
+  }
+  .splitter {
+    width: 100%;
+    height: 10px;
+    margin: -5px 0;
+    cursor: row-resize;
+  }
+  .splitter::before {
+    width: 100%;
+    height: 2px;
+  }
+  .splitter:hover::before, .splitter.dragging::before {
+    height: 4px;
+    width: 100%;
+  }
+}
+
+/* Print Stylesheet */
+@media print {
+  .header, .map-controls-group, .splitter, .btn-floating-open, .nav-controls, .toast-container, .modal-overlay {
+    display: none !important;
+  }
+  .app, .workspace {
+    height: auto !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+  .map-panel, .doc-panel {
+    width: 100% !important;
+    height: 460px !important;
+    display: block !important;
+    page-break-after: always;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+}
+
 /* Utilities */
 .hidden { display: none !important; }
 </style>
@@ -1150,27 +1246,15 @@ button:focus-visible, input:focus-visible, a:focus-visible {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </button>
 
-      <!-- More Options Popover -->
-      <div style="position: relative;">
-        <button class="btn-icon" id="menuBtn" data-tooltip="More Options" data-tooltip-pos="bottom" aria-label="More Options">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-        </button>
-        <div class="popover" id="menuPopover">
-          <button class="menu-item" data-action="export">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            <span>Export CSV</span>
-          </button>
-          <button class="menu-item" data-action="link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-            <span>Copy Direct Link</span>
-          </button>
-          <div class="menu-sep"></div>
-          <button class="menu-item" data-action="fullscreen">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-            <span>Toggle Fullscreen</span>
-          </button>
-        </div>
-      </div>
+      <!-- Toggle Fullscreen -->
+      <button class="btn-icon" id="fullscreenBtn" data-tooltip="Toggle Fullscreen" data-tooltip-pos="bottom" aria-label="Toggle Fullscreen">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      </button>
+
+      <!-- Developer Portfolio Link -->
+      <a class="btn-icon" id="devBtn" href="https://i-kabir.github.io/portfolio" target="_blank" rel="noopener noreferrer" data-tooltip="Developer Portfolio" data-tooltip-pos="bottom" aria-label="Developer Portfolio">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </a>
     </div>
   </header>
 
@@ -1274,6 +1358,25 @@ button:focus-visible, input:focus-visible, a:focus-visible {
             </div>
           </div>
 
+          <!-- Empty State View (shown when structure has no documents) -->
+          <div id="emptyDocView" class="folder-view hidden">
+            <div class="folder-card">
+              <div class="folder-icon-wrapper" style="background:var(--accent-light); color:var(--accent);">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
+              </div>
+              <div class="folder-info">
+                <div class="folder-title" id="emptyDocTitle">No Documents Attached</div>
+                <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">No inspection document or folder is linked to this structure yet.</div>
+              </div>
+            </div>
+          </div>
+
           <!-- Skeleton Loading Animation -->
           <div class="skeleton" id="docSkeleton">
             <div class="skeleton-line title"></div>
@@ -1291,10 +1394,10 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   </main>
 
   <!-- Shortcuts Modal -->
-  <div class="modal-overlay" id="shortcutsModal">
-    <div class="modal">
-      <h2>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="18" y1="16" x2="18.01" y2="16"/></svg>
+  <div class="modal-overlay" id="shortcutsModal" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
+    <div class="modal" tabindex="-1">
+      <h2 id="shortcutsTitle">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="18" y1="16" x2="18.01" y2="16"/></svg>
         <span>Keyboard Shortcuts</span>
       </h2>
       <div class="shortcut-grid">
@@ -1302,7 +1405,8 @@ button:focus-visible, input:focus-visible, a:focus-visible {
         <span class="kbd">0</span> <span>Return to Project Overview</span>
         <span class="kbd">1-9</span> <span>Switch document tab</span>
         <span class="kbd">W</span> <span>Toggle window layout (Map / Details / Split)</span>
-        <span class="kbd">Esc</span> <span>Close dropdowns / menus</span>
+        <span class="kbd">F</span> <span>Toggle fullscreen</span>
+        <span class="kbd">Esc</span> <span>Close dialogs / search dropdown</span>
         <span class="kbd">←</span> <span>Step to previous structure</span>
         <span class="kbd">→</span> <span>Step to next structure</span>
       </div>
@@ -1322,6 +1426,29 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 (()=>{'use strict';
 
 // ----------------------------------------------------------------------
+// Safe Storage Helpers (Robust against restricted / corrupt storage)
+// ----------------------------------------------------------------------
+const safeStorage = {
+  get(key, fallback = null) {
+    try {
+      const v = localStorage.getItem(key);
+      return v !== null ? v : fallback;
+    } catch { return fallback; }
+  },
+  getJSON(key, fallback = null) {
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : fallback;
+    } catch { return fallback; }
+  },
+  set(key, val) {
+    try {
+      localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+    } catch {}
+  }
+};
+
+// ----------------------------------------------------------------------
 // Constants & State
 // ----------------------------------------------------------------------
 const CSV_URL = './structures.csv';
@@ -1338,7 +1465,7 @@ let activeGroups = new Set();
 let filteredIds = [];
 let selectedId = null;
 let currentDocIndex = 0;
-let recentIds = JSON.parse(localStorage.getItem('st-recent') || '[]');
+let recentIds = safeStorage.getJSON('st-recent', []);
 
 let map, markerCluster;
 const googleAttribution = 'Map data © Google';
@@ -1347,12 +1474,12 @@ const layers = {
   hybrid: L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {subdomains:['0','1','2','3'], maxZoom: 21, attribution: googleAttribution}),
   street: L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {subdomains:['0','1','2','3'], maxZoom: 21, attribution: googleAttribution})
 };
-let currentLayer = localStorage.getItem('st-layer') || 'satellite';
+let currentLayer = safeStorage.get('st-layer', 'satellite');
 
 // ----------------------------------------------------------------------
 // Theme Engine
 // ----------------------------------------------------------------------
-let themeState = localStorage.getItem('st-theme') || 'system';
+let themeState = safeStorage.get('st-theme', 'system');
 const themeIcons = {
   system: '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
   light: '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
@@ -1361,7 +1488,7 @@ const themeIcons = {
 
 function applyTheme(state) {
   themeState = state;
-  localStorage.setItem('st-theme', state);
+  safeStorage.set('st-theme', state);
   const isDark = state === 'dark' || (state === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.classList.toggle('dark', isDark);
 
@@ -1510,7 +1637,7 @@ function resolveDocInfo(rawPath, rawTitle) {
     };
   }
 
-  // Folder detection (local path without file extension, or title says folder/photo)
+  // Folder detection
   const norm = p.replace(/\\/g, '/');
   const cleanPath = norm.split(/[?#]/)[0];
   const lastSeg = cleanPath.split('/').filter(Boolean).pop() || '';
@@ -1540,79 +1667,33 @@ function resolveDocInfo(rawPath, rawTitle) {
   };
 }
 
-const pathAccessCache = new Map();
-
-async function checkPathAccessible(rawPath) {
+function isPathValid(rawPath) {
   const p = String(rawPath || '').trim();
   if (!p || p === '-' || p === '#' || p.toLowerCase() === 'n/a' || p.toLowerCase() === 'none') {
     return false;
   }
-  // If it's a web URL
-  if (/^https?:\/\//i.test(p)) {
-    try {
-      new URL(p);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  // Local path
-  const normalized = p.replace(/\\/g, '/');
-  if (pathAccessCache.has(normalized)) {
-    return pathAccessCache.get(normalized);
-  }
-
-  // If served over HTTP/HTTPS, probe the path
-  if (window.location.protocol.startsWith('http')) {
-    try {
-      const resp = await fetch(normalized, { method: 'HEAD' });
-      if (resp.status === 404 || resp.status === 410) {
-        pathAccessCache.set(normalized, false);
-        return false;
-      }
-      pathAccessCache.set(normalized, true);
-      return true;
-    } catch {
-      try {
-        const resp2 = await fetch(normalized, { method: 'GET' });
-        if (resp2.status === 404 || resp2.status === 410) {
-          pathAccessCache.set(normalized, false);
-          return false;
-        }
-        pathAccessCache.set(normalized, true);
-        return true;
-      } catch {
-        pathAccessCache.set(normalized, true);
-        return true;
-      }
-    }
-  }
-
-  // file:// or other protocols
-  pathAccessCache.set(normalized, true);
   return true;
 }
 
-async function parseDocuments(pathRaw, titleRaw) {
+function parseDocuments(pathRaw, titleRaw) {
   const rawPaths = String(pathRaw || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
   const rawTitles = String(titleRaw || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
 
   if (rawPaths.length === 0) return [];
 
-  // Pair up paths and titles
-  const pairs = rawPaths.map((path, idx) => ({
-    path,
-    title: rawTitles[idx] || ''
-  }));
+  const validPairs = [];
+  rawPaths.forEach((path, idx) => {
+    if (isPathValid(path)) {
+      validPairs.push({
+        path,
+        title: rawTitles[idx] || ''
+      });
+    }
+  });
 
-  // Filter accessible paths concurrently
-  const accessibilityResults = await Promise.all(pairs.map(pair => checkPathAccessible(pair.path)));
-  const accessiblePairs = pairs.filter((_, idx) => accessibilityResults[idx]);
+  if (validPairs.length === 0) return [];
 
-  if (accessiblePairs.length === 0) return [];
-
-  return accessiblePairs.map((pair, idx) => {
+  return validPairs.map((pair, idx) => {
     const info = resolveDocInfo(pair.path, pair.title) || {
       type: 'web',
       isFolder: false,
@@ -1625,7 +1706,7 @@ async function parseDocuments(pathRaw, titleRaw) {
     let title = pair.title;
     if (!title) {
       if (info.isFolder) {
-        title = accessiblePairs.length === 1 ? 'Folder' : `Folder ${idx + 1}`;
+        title = validPairs.length === 1 ? 'Folder' : `Folder ${idx + 1}`;
       } else if (info.type === 'sheet') {
         title = 'Spreadsheet';
       } else if (info.type === 'slide') {
@@ -1633,7 +1714,7 @@ async function parseDocuments(pathRaw, titleRaw) {
       } else if (info.type === 'doc') {
         title = 'Document';
       } else {
-        title = accessiblePairs.length === 1 ? 'Details' : `Document ${idx + 1}`;
+        title = validPairs.length === 1 ? 'Details' : `Document ${idx + 1}`;
       }
     }
 
@@ -1670,6 +1751,13 @@ markerCluster = L.markerClusterGroup({
 });
 map.addLayer(markerCluster);
 
+// Zoom-gated marker label visibility via CSS class toggle
+const updateMapZoomClass = () => {
+  map.getContainer().classList.toggle('map-zoomed-in', map.getZoom() >= 13);
+};
+map.on('zoomend', updateMapZoomClass);
+updateMapZoomClass();
+
 // Map Layer Switcher
 $('mapSwitcher').addEventListener('click', e => {
   const btn = e.target.closest('button[data-layer]');
@@ -1679,7 +1767,7 @@ $('mapSwitcher').addEventListener('click', e => {
   map.removeLayer(layers[currentLayer]);
   currentLayer = layer;
   layers[currentLayer].addTo(map);
-  localStorage.setItem('st-layer', layer);
+  safeStorage.set('st-layer', layer);
   Array.from($('mapSwitcher').querySelectorAll('button[data-layer]')).forEach(b => b.classList.toggle('active', b === btn));
 });
 
@@ -1750,7 +1838,7 @@ const OVERLAY_CONFIGS = {
 };
 
 const overlayLayers = {};
-const overlayVisibility = JSON.parse(localStorage.getItem('st-overlays') || '{"contract":true,"detail_design":true,"redesign":true}');
+const overlayVisibility = safeStorage.getJSON('st-overlays', { contract: true, detail_design: true, redesign: true });
 
 function parseGeoJSONSafe(text) {
   try {
@@ -1777,7 +1865,7 @@ async function loadOverlayLayer(key) {
   const cfg = OVERLAY_CONFIGS[key];
   if (!cfg) return;
   try {
-    const res = await fetch(cfg.url, { cache: 'no-store' });
+    const res = await fetch(cfg.url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const raw = await res.text();
     const data = parseGeoJSONSafe(raw);
@@ -1847,7 +1935,7 @@ if (layerFilterBar) {
         if (!map.hasLayer(layer)) {
           layer.addTo(map);
           overlayVisibility[key] = true;
-          localStorage.setItem('st-overlays', JSON.stringify(overlayVisibility));
+          safeStorage.set('st-overlays', overlayVisibility);
           btn.classList.add('active');
         }
         map.fitBounds(layer.getBounds().pad(0.18), { maxZoom: 17, animate: true });
@@ -1862,7 +1950,7 @@ if (layerFilterBar) {
       const isCurrentlyActive = overlayVisibility[key] !== false;
       const newActive = !isCurrentlyActive;
       overlayVisibility[key] = newActive;
-      localStorage.setItem('st-overlays', JSON.stringify(overlayVisibility));
+      safeStorage.set('st-overlays', overlayVisibility);
 
       btn.classList.toggle('active', newActive);
       if (layer) {
@@ -1878,17 +1966,6 @@ if (layerFilterBar) {
 loadExistingRoad();
 Object.keys(OVERLAY_CONFIGS).forEach(key => loadOverlayLayer(key));
 
-map.on('zoomend', () => {
-  const z = map.getZoom();
-  markersById.forEach((m, id) => {
-    if(z >= 13 || id === selectedId) {
-      if(!m.getTooltip()) m.bindTooltip(esc(id), {permanent:true, direction:'top', offset:[0,-5], className:'marker-label'}).openTooltip();
-    } else {
-      if(m.getTooltip() && id !== selectedId) m.unbindTooltip();
-    }
-  });
-});
-
 map.on('click', () => {
   if (selectedId) showOverview();
 });
@@ -1898,7 +1975,7 @@ map.on('click', () => {
 // ----------------------------------------------------------------------
 async function loadData() {
   try {
-    const res = await fetch(CSV_URL, {cache:'no-store'});
+    const res = await fetch(CSV_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const raw = await res.text();
     const parsed = Papa.parse(raw, {header:true, skipEmptyLines:'greedy'});
@@ -1907,9 +1984,9 @@ async function loadData() {
     structuresById.clear();
     overviewItem = null;
 
-    const items = await Promise.all(parsed.data.map(async row => {
+    parsed.data.forEach(row => {
       const id = String(row.Structure_ID || row.Inventory_ID || '').trim();
-      if (!id) return null;
+      if (!id) return;
 
       const type = String(row.Structure_Type || '').trim();
       const name = String(row.Structure_Name || '').trim();
@@ -1917,9 +1994,9 @@ async function loadData() {
       const groups = [...new Set(String(row.Groups||'').split(';').map(s=>s.trim()).filter(Boolean))];
       const pathRaw = String(row.Path || row.Google_Link || row.Document_URL || '').trim();
       const titleRaw = String(row.Title || '').trim();
-      const documents = await parseDocuments(pathRaw, titleRaw);
+      const documents = parseDocuments(pathRaw, titleRaw);
 
-      return {
+      const item = {
         id,
         type,
         name,
@@ -1928,16 +2005,14 @@ async function loadData() {
         documents,
         _raw: row
       };
-    }));
 
-    items.filter(Boolean).forEach(item => {
       const idUpper = item.id.toUpperCase();
       if (idUpper === 'HOME' || idUpper === 'ALL') {
         overviewItem = item;
         if (!overviewItem.name) overviewItem.name = 'Project Overview';
       } else {
-        const lat = Number(item._raw.Latitude);
-        const lon = Number(item._raw.Longitude);
+        const lat = Number(row.Latitude);
+        const lon = Number(row.Longitude);
         if (!isNaN(lat) && !isNaN(lon)) {
           item.lat = lat;
           item.lon = lon;
@@ -1989,18 +2064,27 @@ async function loadData() {
 // ----------------------------------------------------------------------
 // Markers
 // ----------------------------------------------------------------------
-function getConditionColor(cond) {
-  const c = cond.toLowerCase();
-  if (/critical|poor|bad/.test(c)) return 'var(--danger)';
-  if (/fair|moderate/.test(c)) return 'var(--warn)';
-  if (/good|excellent/.test(c)) return 'var(--good)';
-  return 'var(--accent)';
+function getStructureColor(type, cond) {
+  if (cond) {
+    const c = cond.toLowerCase();
+    if (/critical|poor|bad/.test(c)) return '#ef4444';
+    if (/fair|moderate/.test(c)) return '#f59e0b';
+    if (/good|excellent/.test(c)) return '#10b981';
+  }
+  const t = String(type || '').toLowerCase();
+  if (t.includes('flyover') || t.includes('overpass')) return '#8b5cf6';
+  if (t.includes('bridge')) return '#2563eb';
+  if (t.includes('culvert')) return '#10b981';
+  if (t.includes('underpass')) return '#f59e0b';
+  return '#0ea5e9';
 }
 
 function updateMapMarkers() {
   markerCluster.clearLayers();
   markersById.clear();
   filteredIds = [];
+
+  const markersToAdd = [];
 
   structures.forEach(s => {
     const visible = activeGroups.size === 0 || s.groups.some(g => activeGroups.has(g));
@@ -2010,8 +2094,15 @@ function updateMapMarkers() {
       radius: 6.5,
       weight: 2,
       color: '#ffffff',
-      fillColor: getConditionColor(s.condition),
+      fillColor: getStructureColor(s.type, s.condition),
       fillOpacity: 0.95
+    });
+
+    m.bindTooltip(esc(s.id), {
+      permanent: true,
+      direction: 'top',
+      offset: [0, -5],
+      className: 'marker-label'
     });
 
     m.bindPopup(`
@@ -2027,8 +2118,12 @@ function updateMapMarkers() {
       selectStructure(s.id);
     });
     markersById.set(s.id, m);
-    if(visible) markerCluster.addLayer(m);
+    if (visible) markersToAdd.push(m);
   });
+
+  if (markersToAdd.length > 0) {
+    markerCluster.addLayers(markersToAdd);
+  }
 
   updateNavStatus();
   updateMarkerStyles();
@@ -2040,7 +2135,6 @@ function updateMapMarkers() {
 }
 
 function updateMarkerStyles() {
-  const z = map.getZoom();
   markersById.forEach((m, id) => {
     const s = structuresById.get(id);
     const isSel = id === selectedId;
@@ -2048,14 +2142,13 @@ function updateMarkerStyles() {
       radius: isSel ? 9.5 : 6.5,
       weight: isSel ? 3 : 2,
       color: isSel ? 'var(--text)' : '#ffffff',
-      fillColor: getConditionColor(s.condition),
+      fillColor: getStructureColor(s ? s.type : '', s ? s.condition : ''),
       fillOpacity: 1
     });
 
-    if (isSel || z >= 13) {
-      if(!m.getTooltip()) m.bindTooltip(esc(id), {permanent:true, direction:'top', offset:[0,-5], className:'marker-label'}).openTooltip();
-    } else {
-      if(m.getTooltip()) m.unbindTooltip();
+    const tooltip = m.getTooltip();
+    if (tooltip && tooltip._container) {
+      tooltip._container.classList.toggle('selected-label', isSel);
     }
   });
 }
@@ -2100,6 +2193,14 @@ const searchInp = $('searchInput');
 const searchDrop = $('searchDropdown');
 const searchRes = $('searchResults');
 let searchIndex = -1;
+
+function debounce(fn, waitMs = 150) {
+  let timer;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), waitMs);
+  };
+}
 
 function renderSearch(query) {
   searchRes.innerHTML = '';
@@ -2152,8 +2253,10 @@ function renderSearch(query) {
   searchDrop.classList.add('open');
 }
 
+const debouncedRenderSearch = debounce(q => renderSearch(q), 150);
+
 searchInp.addEventListener('focus', () => renderSearch(searchInp.value));
-searchInp.addEventListener('input', () => renderSearch(searchInp.value));
+searchInp.addEventListener('input', () => debouncedRenderSearch(searchInp.value));
 searchInp.addEventListener('blur', () => setTimeout(()=>searchDrop.classList.remove('open'), 160));
 
 searchInp.addEventListener('keydown', e => {
@@ -2206,9 +2309,10 @@ function renderDocTabs(documents, activeIndex, onSelectTab) {
 
 function getTypePillColor(type) {
   const t = String(type || '').toLowerCase();
-  if (t.includes('flyover')) return '#7c3aed';
+  if (t.includes('flyover') || t.includes('overpass')) return '#8b5cf6';
   if (t.includes('bridge')) return '#2563eb';
-  if (t.includes('culvert')) return '#059669';
+  if (t.includes('culvert')) return '#10b981';
+  if (t.includes('underpass')) return '#f59e0b';
   return 'var(--accent)';
 }
 
@@ -2216,6 +2320,9 @@ function activateDoc(idx, item) {
   if (!item || !item.documents || !item.documents[idx]) return;
   currentDocIndex = idx;
   const doc = item.documents[idx];
+
+  const emptyDocView = $('emptyDocView');
+  if (emptyDocView) emptyDocView.classList.add('hidden');
 
   const tabBtns = $('docTabs').querySelectorAll('.tab');
   tabBtns.forEach((btn, i) => {
@@ -2269,9 +2376,9 @@ function selectStructure(id, pushState = true, initialDocIndex = 0) {
   selectedId = id;
   currentDocIndex = (initialDocIndex >= 0 && s.documents && initialDocIndex < s.documents.length) ? initialDocIndex : 0;
 
-  // Recents
+  // Recents (safeStorage)
   recentIds = [id, ...recentIds.filter(x => x !== id)].slice(0, 8);
-  localStorage.setItem('st-recent', JSON.stringify(recentIds));
+  safeStorage.set('st-recent', recentIds);
 
   // Ensure visible
   const m = markersById.get(id);
@@ -2296,7 +2403,7 @@ function selectStructure(id, pushState = true, initialDocIndex = 0) {
     history.pushState({structure: id, tab: currentDocIndex}, '', url);
   }
 
-  // Update Detail Panel Header (Structure type pill placed LEFT of structure name in same line)
+  // Update Detail Panel Header
   const typePill = s.type ? `<span class="type-pill" style="background:${getTypePillColor(s.type)}">${esc(s.type)}</span>` : '';
   $('docTitle').innerHTML = `${typePill}<span class="doc-title-text">${esc(s.id)} — ${esc(s.name || 'Unnamed')}</span>`;
 
@@ -2306,14 +2413,20 @@ function selectStructure(id, pushState = true, initialDocIndex = 0) {
   // Render Dynamic Tabs for this structure
   renderDocTabs(s.documents, currentDocIndex, idx => activateDoc(idx, s));
 
+  const emptyDocView = $('emptyDocView');
   if (s.documents && s.documents.length > 0) {
+    if (emptyDocView) emptyDocView.classList.add('hidden');
     activateDoc(currentDocIndex, s);
   } else {
     docFrame.src = 'about:blank';
-    docFrame.style.display = 'block';
+    docFrame.style.display = 'none';
     docSkeleton.style.opacity = '0';
     $('folderView').classList.add('hidden');
     $('floatingOpenBtn').classList.add('hidden');
+    if (emptyDocView) {
+      $('emptyDocTitle').textContent = `No Documents Attached (${esc(s.id)})`;
+      emptyDocView.classList.remove('hidden');
+    }
     showToast('No documents linked to this structure.');
   }
 }
@@ -2323,6 +2436,12 @@ function showOverview(pushState = true) {
   currentDocIndex = 0;
   updateMarkerStyles();
   map.closePopup();
+
+  // Reset overview camera position (Suggestion 13)
+  map.setView(DEFAULT_CENTER, DEFAULT_ZOOM, { animate: true });
+
+  const emptyDocView = $('emptyDocView');
+  if (emptyDocView) emptyDocView.classList.add('hidden');
 
   if (pushState) {
     history.pushState({}, '', location.pathname);
@@ -2399,7 +2518,7 @@ docFrame.onload = () => {
 };
 
 // ----------------------------------------------------------------------
-// Window Layout & Splitter (Draggable Resizer)
+// Window Layout & Splitter (Draggable Resizer via Pointer Events API)
 // ----------------------------------------------------------------------
 const splitter = $('splitter');
 const workspace = $('workspace');
@@ -2432,7 +2551,6 @@ function setWindowLayout(mode) {
       layoutToggleBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="3" y="3" width="18" height="18" fill="currentColor" fill-opacity="0.2"/><path d="M8 12h8m-4-4v8"/></svg>`;
     }
   } else {
-    // 'split'
     windowLayout = 'split';
     mapPanel.style.display = 'flex';
     mapPanel.style.width = `${savedSplitPct || 50}%`;
@@ -2459,9 +2577,11 @@ if (layoutToggleBtn) {
   layoutToggleBtn.addEventListener('click', cycleWindowLayout);
 }
 
-splitter.addEventListener('mousedown', e => {
+// Pointer Events API (Suggestion 10)
+splitter.addEventListener('pointerdown', e => {
   if (windowLayout !== 'split') return;
   isDragging = true;
+  splitter.setPointerCapture(e.pointerId);
   startX = e.clientX;
   startW = mapPanel.getBoundingClientRect().width;
   splitter.classList.add('dragging');
@@ -2469,7 +2589,8 @@ splitter.addEventListener('mousedown', e => {
   document.body.style.userSelect = 'none';
   docFrame.style.pointerEvents = 'none';
 });
-window.addEventListener('mousemove', e => {
+
+splitter.addEventListener('pointermove', e => {
   if (!isDragging) return;
   const newW = startW + (e.clientX - startX);
   const total = workspace.getBoundingClientRect().width;
@@ -2477,16 +2598,22 @@ window.addEventListener('mousemove', e => {
   savedSplitPct = pct;
   mapPanel.style.width = `${pct}%`;
 });
-window.addEventListener('mouseup', () => {
+
+const stopDragging = (e) => {
   if (isDragging) {
     isDragging = false;
+    try { splitter.releasePointerCapture(e.pointerId); } catch {}
     splitter.classList.remove('dragging');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
     docFrame.style.pointerEvents = 'auto';
     map.invalidateSize();
   }
-});
+};
+
+splitter.addEventListener('pointerup', stopDragging);
+splitter.addEventListener('pointercancel', stopDragging);
+
 splitter.addEventListener('dblclick', () => {
   savedSplitPct = 50;
   setWindowLayout('split');
@@ -2494,58 +2621,88 @@ splitter.addEventListener('dblclick', () => {
 });
 
 // ----------------------------------------------------------------------
-// Popover Menu & Export
+// Fullscreen & Developer Controls (User Request)
 // ----------------------------------------------------------------------
-$('menuBtn').onclick = (e) => {
-  e.stopPropagation();
-  $('menuPopover').classList.toggle('open');
-};
-document.body.addEventListener('click', () => $('menuPopover').classList.remove('open'));
+const fullscreenBtn = $('fullscreenBtn');
+function updateFullscreenIcon() {
+  if (!fullscreenBtn) return;
+  const isFull = !!document.fullscreenElement;
+  fullscreenBtn.setAttribute('data-tooltip', isFull ? 'Exit Fullscreen (F)' : 'Toggle Fullscreen (F)');
+  fullscreenBtn.innerHTML = isFull
+    ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>'
+    : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
+}
 
-$('menuPopover').addEventListener('click', e => {
-  const btn = e.target.closest('.menu-item');
-  if(!btn) return;
-  const action = btn.dataset.action;
-  if(action === 'fullscreen') {
-    if(!document.fullscreenElement) document.documentElement.requestFullscreen();
-    else document.exitFullscreen();
-  }
-  if(action === 'link') {
-    if(selectedId) {
-      const u = new URL(location);
-      u.searchParams.set('structure', selectedId);
-      if (currentDocIndex > 0) u.searchParams.set('tab', currentDocIndex);
-      else u.searchParams.delete('tab');
-      navigator.clipboard.writeText(u.href);
-      showToast('Direct link copied to clipboard');
+if (fullscreenBtn) {
+  fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
     } else {
-      showToast('Select a structure first');
+      document.exitFullscreen().catch(() => {});
+    }
+  });
+}
+document.addEventListener('fullscreenchange', updateFullscreenIcon);
+
+// CSV Export (with Object URL revocation - Suggestion 17)
+function exportFilteredCSV() {
+  const rows = filteredIds.length ? filteredIds.map(id => structuresById.get(id)) : structures;
+  if (!rows.length) return;
+  const csv = Papa.unparse(rows.map(s => s._raw));
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'structures-filtered.csv';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast(`Exported ${rows.length} structures to CSV`);
+}
+
+// ----------------------------------------------------------------------
+// Shortcuts Modal & Focus Management (Suggestion 18)
+// ----------------------------------------------------------------------
+let lastFocusedElement = null;
+const shortcutsModal = $('shortcutsModal');
+const modalContent = shortcutsModal ? shortcutsModal.querySelector('.modal') : null;
+
+function openShortcutsModal() {
+  if (!shortcutsModal) return;
+  lastFocusedElement = document.activeElement;
+  shortcutsModal.classList.add('open');
+  if (modalContent) modalContent.focus();
+}
+
+function closeShortcutsModal() {
+  if (shortcutsModal && shortcutsModal.classList.contains('open')) {
+    shortcutsModal.classList.remove('open');
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+      lastFocusedElement.focus();
     }
   }
-  if(action === 'export') {
-    const rows = filteredIds.length ? filteredIds.map(id => structuresById.get(id)) : structures;
-    if(!rows.length) return;
-    const csv = Papa.unparse(rows.map(s => s._raw));
-    const blob = new Blob(['\ufeff' + csv], {type:'text/csv;charset=utf-8;'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'structures-filtered.csv';
-    a.click();
-    showToast(`Exported ${rows.length} structures to CSV`);
-  }
-});
+}
 
-// Shortcuts Modal
-$('helpBtn').onclick = () => $('shortcutsModal').classList.add('open');
-$('shortcutsModal').onclick = e => { if(e.target === $('shortcutsModal')) $('shortcutsModal').classList.remove('open'); };
+if ($('helpBtn')) $('helpBtn').onclick = openShortcutsModal;
+if (shortcutsModal) {
+  shortcutsModal.onclick = e => {
+    if (e.target === shortcutsModal) closeShortcutsModal();
+  };
+}
 
+// ----------------------------------------------------------------------
 // Global Keyboard Shortcuts
+// ----------------------------------------------------------------------
 window.addEventListener('keydown', e => {
-  if(/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
-  if(e.key === '/') { e.preventDefault(); searchInp.focus(); }
-  if(e.key === '0') { e.preventDefault(); showOverview(); }
-  if(e.key === 'w' || e.key === 'W') { e.preventDefault(); cycleWindowLayout(); }
-  if(/^[1-9]$/.test(e.key)) {
+  if (/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  if (e.key === '/') { e.preventDefault(); searchInp.focus(); }
+  if (e.key === '0') { e.preventDefault(); showOverview(); }
+  if (e.key === 'w' || e.key === 'W') { e.preventDefault(); cycleWindowLayout(); }
+  if (e.key === 'f' || e.key === 'F') {
+    e.preventDefault();
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+    else document.exitFullscreen().catch(() => {});
+  }
+  if (/^[1-9]$/.test(e.key)) {
     const num = parseInt(e.key, 10);
     const currentItem = selectedId ? structuresById.get(selectedId) : overviewItem;
     if (currentItem && currentItem.documents && num <= currentItem.documents.length) {
@@ -2553,11 +2710,11 @@ window.addEventListener('keydown', e => {
       activateDoc(num - 1, currentItem);
     }
   }
-  if(e.key === 'ArrowLeft') { e.preventDefault(); moveNav(-1); }
-  if(e.key === 'ArrowRight') { e.preventDefault(); moveNav(1); }
-  if(e.key === 'Escape') {
-    $('shortcutsModal').classList.remove('open');
-    $('menuPopover').classList.remove('open');
+  if (e.key === 'ArrowLeft') { e.preventDefault(); moveNav(-1); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); moveNav(1); }
+  if (e.key === 'Escape') {
+    closeShortcutsModal();
+    searchDrop.classList.remove('open');
   }
 });
 
